@@ -4,13 +4,25 @@
 
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+To start the project, I read the README.md to understand the full scope of PawPal+. The scenario described a busy pet owner who needs help staying consistent with pet care. The app needs to collect basic owner and pet information, allow the user to add and edit care tasks (like walks, feeding, medications, grooming, and enrichment), and then generate a daily schedule based on constraints like available time and task priority. The plan should also explain why it was generated that way.
+
+From this, I identified the following core classes for my initial UML design:
+
+- **Owner** — stores the owner's name and available time per day
+- **Pet** — stores the pet's name, species, and any special needs
+- **Task** — represents a single care task with attributes for name, duration, priority, and category
+- **Scheduler** — takes a list of tasks and constraints and produces an ordered daily plan
+- **Plan** — holds the output of the scheduler: the ordered list of tasks and the reasoning behind the selection
+
+The **Scheduler** was identified as the most critical class since it contains the core logic. **Task** objects flow into it, and a **Plan** object comes out. **Owner** and **Pet** serve as context that the Scheduler can use to apply constraints.
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+Yes, one change was made after reviewing the initial skeleton against the UML spec.
+
+**`_filter_feasible` return type corrected from `list[Task]` to `tuple[list[Task], list[Task]]`**
+
+The initial skeleton declared `_filter_feasible` as returning a single `list[Task]`. During review, I identified that this was incorrect: the method must return *two* lists — one for tasks that fit within the remaining time budget, and one for tasks that were skipped. Without the tuple return, `generate_plan` would have no way to populate `plan.skipped_tasks`, silently dropping skipped tasks from the output. The fix aligns the return type with both the UML spec and the scheduling contract described in `agent.md`.
 
 ---
 
@@ -23,8 +35,13 @@
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+**Tradeoff: Named time slots instead of exact start/end times**
+
+The scheduler assigns tasks to broad named slots — `morning`, `afternoon`, `evening`, or `any` — rather than tracking precise start and end times (e.g., 8:00–8:30 AM). Conflict detection checks whether the *total minutes* in a slot exceed a recommended budget, and whether a single pet has more than one task in the same slot. It does not check whether two tasks' durations would literally overlap on a clock.
+
+This means two tasks in the `morning` slot each taking 20 minutes are flagged as a same-pet conflict, even if they could be scheduled back-to-back at 7:00 and 7:20 without any real overlap. Conversely, two tasks totalling exactly 45 minutes pass without a conflict warning even though fitting them both in might leave no buffer for the owner.
+
+This tradeoff is reasonable for a home pet-care scenario because the target user is not managing a hospital schedule — they're fitting care routines around a flexible morning or evening. The slot model is simpler to reason about, easier to display, and avoids requiring the owner to input precise clock times for every task. The budget-overrun warning still surfaces situations where a slot is genuinely overloaded, giving the owner useful feedback without demanding minute-by-minute precision they don't actually need.
 
 ---
 

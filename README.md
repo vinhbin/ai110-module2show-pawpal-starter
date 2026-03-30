@@ -22,6 +22,17 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## Smarter Scheduling
+
+PawPal+ goes beyond a simple priority list. The scheduler applies a multi-stage pipeline to turn raw tasks into a realistic daily plan:
+
+- **Frequency filtering** — `daily` tasks are always considered; `weekly` tasks only appear on their scheduled day; `as-needed` tasks are never auto-scheduled.
+- **Required-task guarantee** — tasks marked `required` are always included first, before any time-budget check.
+- **Preference-aware sorting** — optional tasks are ordered by time slot (morning → afternoon → evening → any), then priority, then whether the category matches the owner's preferences, then shortest-first within a tier to maximise the number of tasks that fit.
+- **Greedy fill without early exit** — the scheduler never stops at the first task that doesn't fit; it continues checking later tasks so shorter ones can still be scheduled even after a longer one is skipped.
+- **Recurring task auto-spawn** — when a `daily` or `weekly` task is marked complete, a new instance is automatically added to the pet's task list with its `due_date` advanced using Python's `timedelta` (`+1 day` or `+7 days`).
+- **Conflict detection** — after scheduling, the plan is scanned for three warning classes: same-pet slot overlap (a pet has two tasks in the same slot), slot budget overrun (total slot minutes exceed the recommended cap), and required-task collisions (two required tasks share a slot). Warnings are returned as plain strings — the program never crashes on a conflict.
+
 ## Getting started
 
 ### Setup
