@@ -33,6 +33,31 @@ PawPal+ goes beyond a simple priority list. The scheduler applies a multi-stage 
 - **Recurring task auto-spawn** — when a `daily` or `weekly` task is marked complete, a new instance is automatically added to the pet's task list with its `due_date` advanced using Python's `timedelta` (`+1 day` or `+7 days`).
 - **Conflict detection** — after scheduling, the plan is scanned for three warning classes: same-pet slot overlap (a pet has two tasks in the same slot), slot budget overrun (total slot minutes exceed the recommended cap), and required-task collisions (two required tasks share a slot). Warnings are returned as plain strings — the program never crashes on a conflict.
 
+## Testing PawPal+
+
+### Run the test suite
+
+```bash
+python -m pytest tests/test_pawpal.py -v
+```
+
+### What the tests cover
+
+| Area | What is verified |
+|---|---|
+| **Sorting** | Tasks are returned in slot order (morning → afternoon → evening → any); higher-priority tasks sort before lower-priority ones within the same slot |
+| **Recurrence** | Completing a `daily` task auto-creates a clone due tomorrow; `weekly` tasks clone with `+7 days`; `as-needed` tasks produce no clone |
+| **Conflict detection** | Same-pet slot overlap, slot budget overrun (morning > 45 min), and required-task collisions are all flagged; `time_slot="any"` tasks are correctly exempt |
+| **Budget guard** | Required tasks are always scheduled regardless of remaining time; the greedy fill continues past a skipped long task so a shorter later task can still fit |
+| **Frequency filtering** | `as-needed` tasks never appear in the plan; `weekly` tasks are excluded on the wrong day and included on the correct day |
+| **Validation** | Invalid duration, priority, frequency, and negative available-minutes all raise `ValueError` |
+
+### Confidence level
+
+**★★★★★ (5/5)** — All 21 tests pass. The suite exercises every stage of the scheduling pipeline (filter → separate → sort → fill → conflict detection) and covers the key edge cases identified in the design spec: the required-task budget guard, greedy-fill non-exit behaviour, recurring-task cloning, and all three conflict classes.
+
+---
+
 ## Getting started
 
 ### Setup
