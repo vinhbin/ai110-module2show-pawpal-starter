@@ -81,3 +81,48 @@ def test_filter_by_completed_status():
     assert {t.title for t in incomplete} == {"Dinner", "Litter"}
     complete = s.filter_tasks(completed=True)
     assert {t.title for t in complete} == {"Walk"}
+
+
+def test_detect_conflicts_flags_same_time_same_pet():
+    owner = Owner("Jordan")
+    pet = Pet("Mochi", "dog")
+    pet.add_task(Task("Walk", 30, time="08:00"))
+    pet.add_task(Task("Meds", 5, time="08:00"))
+    owner.add_pet(pet)
+    warnings = Scheduler(owner).detect_conflicts()
+    assert len(warnings) == 1
+    assert "08:00" in warnings[0]
+
+
+def test_detect_conflicts_none_when_times_differ():
+    owner = Owner("Jordan")
+    pet = Pet("Mochi", "dog")
+    pet.add_task(Task("Walk", 30, time="08:00"))
+    pet.add_task(Task("Dinner", 10, time="18:00"))
+    owner.add_pet(pet)
+    assert Scheduler(owner).detect_conflicts() == []
+
+
+def test_mark_task_complete_spawns_next_for_daily():
+    owner = Owner("Jordan")
+    pet = Pet("Mochi", "dog")
+    daily = Task("Walk", 30, frequency="daily", date="2026-01-01")
+    pet.add_task(daily)
+    owner.add_pet(pet)
+    s = Scheduler(owner)
+    spawned = s.mark_task_complete(daily)
+    assert daily.completed is True
+    assert spawned is not None and spawned.date == "2026-01-02"
+    # the new occurrence is attached to the same pet
+    assert spawned in pet.tasks
+    assert pet.task_count() == 2
+
+
+def test_mark_task_complete_once_returns_none():
+    owner = Owner("Jordan")
+    pet = Pet("Mochi", "dog")
+    once = Task("Vet", 60, frequency="once")
+    pet.add_task(once)
+    owner.add_pet(pet)
+    assert Scheduler(owner).mark_task_complete(once) is None
+    assert pet.task_count() == 1

@@ -117,11 +117,29 @@ class Scheduler:
 
     def mark_task_complete(self, task: Task) -> "Task | None":
         """Complete a task; if it recurs, spawn and return the next occurrence."""
-        raise NotImplementedError
+        task.mark_complete()
+        nxt = task.next_occurrence()
+        if nxt is None:
+            return None
+        for pet in self.owner.pets:
+            if task in pet.tasks:
+                pet.add_task(nxt)
+                break
+        return nxt
 
     def detect_conflicts(self) -> list[str]:
         """Return human-readable warnings for tasks scheduled at the same time."""
-        raise NotImplementedError
+        seen: dict[str, str] = {}   # time -> first task label
+        warnings: list[str] = []
+        for pet, task in self.owner.all_tasks_with_pet():
+            label = f"{pet.name}'s '{task.title}'"
+            if task.time in seen:
+                warnings.append(
+                    f"Conflict at {task.time}: {seen[task.time]} overlaps with {label}."
+                )
+            else:
+                seen[task.time] = label
+        return warnings
 
     def next_available_slot(self, duration_minutes, day_start="06:00", day_end="22:00") -> "str | None":
         """Return the earliest 'HH:MM' that fits a task of the given duration, or None."""
