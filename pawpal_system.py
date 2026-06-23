@@ -1,6 +1,7 @@
 """PawPal+ logic layer: Owner/Pet/Task/Scheduler for pet-care planning."""
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import date as _date, timedelta
 from enum import IntEnum
@@ -175,9 +176,50 @@ def _to_hhmm(minutes: int) -> str:
 
 def save_to_json(owner: Owner, path: str) -> None:
     """Persist an owner (and nested pets/tasks) to a JSON file."""
-    raise NotImplementedError
+    data = {
+        "name": owner.name,
+        "pets": [
+            {
+                "name": pet.name,
+                "species": pet.species,
+                "tasks": [
+                    {
+                        "title": t.title,
+                        "duration_minutes": t.duration_minutes,
+                        "priority": int(t.priority),
+                        "time": t.time,
+                        "frequency": t.frequency,
+                        "completed": t.completed,
+                        "date": t.date,
+                    }
+                    for t in pet.tasks
+                ],
+            }
+            for pet in owner.pets
+        ],
+    }
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, indent=2)
 
 
 def load_from_json(path: str) -> Owner:
     """Reconstruct an Owner from a JSON file written by save_to_json."""
-    raise NotImplementedError
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+    owner = Owner(data["name"])
+    for pet_data in data.get("pets", []):
+        pet = Pet(pet_data["name"], pet_data.get("species", "dog"))
+        for t in pet_data.get("tasks", []):
+            pet.add_task(
+                Task(
+                    title=t["title"],
+                    duration_minutes=t["duration_minutes"],
+                    priority=Priority(t.get("priority", 2)),
+                    time=t.get("time", "09:00"),
+                    frequency=t.get("frequency", "once"),
+                    completed=t.get("completed", False),
+                    date=t.get("date", "2026-01-01"),
+                )
+            )
+        owner.add_pet(pet)
+    return owner

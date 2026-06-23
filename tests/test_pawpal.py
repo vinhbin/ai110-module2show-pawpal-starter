@@ -1,4 +1,5 @@
 from pawpal_system import Priority, Task, Pet, Owner, Scheduler
+from pawpal_system import save_to_json, load_from_json
 
 
 def test_classes_exist_and_construct():
@@ -158,3 +159,22 @@ def test_todays_schedule_orders_by_priority_then_time():
     pet.add_task(Task("Meds", 5, Priority.HIGH, time="09:00"))
     owner.add_pet(pet)
     assert [t.title for t in Scheduler(owner).todays_schedule()] == ["Meds", "Walk"]
+
+
+def test_json_round_trip(tmp_path):
+    owner = Owner("Jordan")
+    pet = Pet("Mochi", "dog")
+    pet.add_task(Task("Walk", 30, Priority.HIGH, time="08:00", frequency="daily", date="2026-01-01"))
+    owner.add_pet(pet)
+    path = tmp_path / "data.json"
+
+    save_to_json(owner, str(path))
+    restored = load_from_json(str(path))
+
+    assert restored.name == "Jordan"
+    assert restored.get_pet("Mochi").species == "dog"
+    t = restored.get_pet("Mochi").tasks[0]
+    assert t.title == "Walk"
+    assert t.priority == Priority.HIGH          # enum survives round-trip
+    assert t.frequency == "daily"
+    assert t.time == "08:00"
