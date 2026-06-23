@@ -15,8 +15,13 @@ The system uses four core classes plus a `Priority` enum:
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+Changes from the initial draft to the final implementation:
+- Added `Priority` as an `IntEnum` (not a plain string) so the scheduler can sort numerically.
+- Added `Owner.all_tasks_with_pet()` so conflict/display logic knows which pet owns each task.
+- Added module-level `save_to_json` / `load_from_json` for persistence.
+- Added `Scheduler.next_available_slot()` as a third algorithm.
+
+> _TODO (your words): pick ONE of the above and explain in 1–2 sentences why you changed it._
 
 ---
 
