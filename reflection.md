@@ -4,8 +4,14 @@
 
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+The system uses four core classes plus a `Priority` enum:
+
+- **Task** (dataclass): one care activity — title, duration, priority, time, frequency, completion, date. Knows how to `mark_complete()` and compute its `next_occurrence()`.
+- **Pet** (dataclass): pet info (name, species) and its own list of tasks. `add_task()`, `task_count()`.
+- **Owner**: manages multiple pets; `add_pet()`, `get_pet()`, `all_tasks()` flattens tasks across pets.
+- **Scheduler**: the "brain" — reads the Owner, then sorts, filters, detects conflicts, and builds the daily plan. Holds no data of its own.
+
+> _TODO (your words): in 1–2 sentences, say why you split data (Owner/Pet/Task) from logic (Scheduler)._
 
 **b. Design changes**
 
