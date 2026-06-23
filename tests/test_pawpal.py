@@ -30,3 +30,26 @@ def test_next_occurrence_weekly_advances_seven_days():
 def test_next_occurrence_once_returns_none():
     t = Task("Vet visit", 60, frequency="once", date="2026-01-01")
     assert t.next_occurrence() is None
+
+
+def _owner_with_tasks():
+    owner = Owner("Jordan")
+    pet = Pet("Mochi", "dog")
+    pet.add_task(Task("Dinner", 10, Priority.HIGH, time="18:00"))
+    pet.add_task(Task("Walk", 30, Priority.LOW, time="08:00"))
+    pet.add_task(Task("Meds", 5, Priority.HIGH, time="08:00"))
+    owner.add_pet(pet)
+    return owner
+
+
+def test_sort_by_time_chronological():
+    s = Scheduler(_owner_with_tasks())
+    times = [t.time for t in s.sort_by_time()]
+    assert times == ["08:00", "08:00", "18:00"]
+
+
+def test_sort_by_priority_high_first_then_time():
+    s = Scheduler(_owner_with_tasks())
+    ordered = s.sort_by_priority()
+    # HIGH tasks first (Meds 08:00 before Dinner 18:00), then LOW Walk
+    assert [t.title for t in ordered] == ["Meds", "Dinner", "Walk"]

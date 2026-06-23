@@ -95,11 +95,14 @@ class Scheduler:
 
     def sort_by_time(self) -> list[Task]:
         """Return all tasks ordered by start time."""
-        raise NotImplementedError
+        return sorted(self.owner.all_tasks(), key=lambda t: t.time)
 
     def sort_by_priority(self) -> list[Task]:
         """Return all tasks ordered by priority (high first), then time."""
-        raise NotImplementedError
+        return sorted(
+            self.owner.all_tasks(),
+            key=lambda t: (-int(t.priority), t.time),
+        )
 
     def filter_tasks(self, *, pet_name=None, completed=None) -> list[Task]:
         """Return tasks filtered by pet name and/or completion status."""
