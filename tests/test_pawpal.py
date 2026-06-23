@@ -126,3 +126,35 @@ def test_mark_task_complete_once_returns_none():
     owner.add_pet(pet)
     assert Scheduler(owner).mark_task_complete(once) is None
     assert pet.task_count() == 1
+
+
+def test_next_available_slot_returns_day_start_when_empty():
+    owner = Owner("Jordan")
+    owner.add_pet(Pet("Mochi", "dog"))
+    assert Scheduler(owner).next_available_slot(30, day_start="06:00") == "06:00"
+
+
+def test_next_available_slot_skips_busy_block():
+    owner = Owner("Jordan")
+    pet = Pet("Mochi", "dog")
+    pet.add_task(Task("Walk", 60, time="06:00"))  # busy 06:00-07:00
+    owner.add_pet(pet)
+    # earliest 30-min slot after the walk
+    assert Scheduler(owner).next_available_slot(30, day_start="06:00") == "07:00"
+
+
+def test_next_available_slot_none_when_day_full():
+    owner = Owner("Jordan")
+    pet = Pet("Mochi", "dog")
+    pet.add_task(Task("AllDay", 240, time="06:00"))  # 06:00-10:00
+    owner.add_pet(pet)
+    assert Scheduler(owner).next_available_slot(30, day_start="06:00", day_end="10:00") is None
+
+
+def test_todays_schedule_orders_by_priority_then_time():
+    owner = Owner("Jordan")
+    pet = Pet("Mochi", "dog")
+    pet.add_task(Task("Walk", 30, Priority.LOW, time="08:00"))
+    pet.add_task(Task("Meds", 5, Priority.HIGH, time="09:00"))
+    owner.add_pet(pet)
+    assert [t.title for t in Scheduler(owner).todays_schedule()] == ["Meds", "Walk"]

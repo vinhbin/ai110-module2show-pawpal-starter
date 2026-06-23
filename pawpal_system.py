@@ -143,11 +143,34 @@ class Scheduler:
 
     def next_available_slot(self, duration_minutes, day_start="06:00", day_end="22:00") -> "str | None":
         """Return the earliest 'HH:MM' that fits a task of the given duration, or None."""
-        raise NotImplementedError
+        start, end = _to_minutes(day_start), _to_minutes(day_end)
+        busy = sorted(
+            (_to_minutes(t.time), _to_minutes(t.time) + t.duration_minutes)
+            for t in self.owner.all_tasks()
+        )
+        cursor = start
+        for b_start, b_end in busy:
+            if cursor + duration_minutes <= b_start:
+                break  # fits before this busy block
+            cursor = max(cursor, b_end)
+        if cursor + duration_minutes <= end:
+            return _to_hhmm(cursor)
+        return None
 
     def todays_schedule(self) -> list[Task]:
         """Return today's plan, sorted by priority then time."""
-        raise NotImplementedError
+        return self.sort_by_priority()
+
+
+def _to_minutes(hhmm: str) -> int:
+    """Convert 'HH:MM' to minutes since midnight."""
+    h, m = hhmm.split(":")
+    return int(h) * 60 + int(m)
+
+
+def _to_hhmm(minutes: int) -> str:
+    """Convert minutes since midnight to zero-padded 'HH:MM'."""
+    return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
 
 def save_to_json(owner: Owner, path: str) -> None:
