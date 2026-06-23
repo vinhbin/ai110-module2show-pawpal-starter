@@ -53,3 +53,31 @@ def test_sort_by_priority_high_first_then_time():
     ordered = s.sort_by_priority()
     # HIGH tasks first (Meds 08:00 before Dinner 18:00), then LOW Walk
     assert [t.title for t in ordered] == ["Meds", "Dinner", "Walk"]
+
+
+def _multi_pet_owner():
+    owner = Owner("Jordan")
+    dog = Pet("Mochi", "dog")
+    cat = Pet("Sushi", "cat")
+    done = Task("Walk", 30, time="08:00")
+    done.mark_complete()
+    dog.add_task(done)
+    dog.add_task(Task("Dinner", 10, time="18:00"))
+    cat.add_task(Task("Litter", 5, time="07:00"))
+    owner.add_pet(dog)
+    owner.add_pet(cat)
+    return owner
+
+
+def test_filter_by_pet_name():
+    s = Scheduler(_multi_pet_owner())
+    titles = {t.title for t in s.filter_tasks(pet_name="Sushi")}
+    assert titles == {"Litter"}
+
+
+def test_filter_by_completed_status():
+    s = Scheduler(_multi_pet_owner())
+    incomplete = s.filter_tasks(completed=False)
+    assert {t.title for t in incomplete} == {"Dinner", "Litter"}
+    complete = s.filter_tasks(completed=True)
+    assert {t.title for t in complete} == {"Walk"}

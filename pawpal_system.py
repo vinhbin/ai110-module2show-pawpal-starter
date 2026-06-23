@@ -106,7 +106,14 @@ class Scheduler:
 
     def filter_tasks(self, *, pet_name=None, completed=None) -> list[Task]:
         """Return tasks filtered by pet name and/or completion status."""
-        raise NotImplementedError
+        if pet_name is not None:
+            pet = self.owner.get_pet(pet_name)
+            tasks = list(pet.tasks) if pet else []
+        else:
+            tasks = self.owner.all_tasks()
+        if completed is not None:
+            tasks = [t for t in tasks if t.completed == completed]
+        return tasks
 
     def mark_task_complete(self, task: Task) -> "Task | None":
         """Complete a task; if it recurs, spawn and return the next occurrence."""
