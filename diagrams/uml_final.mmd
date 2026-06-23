@@ -29,18 +29,25 @@ classDiagram
         +add_pet(Pet) None
         +get_pet(str) Pet
         +all_tasks() list~Task~
+        +all_tasks_with_pet() list
     }
     class Scheduler {
         +Owner owner
         +sort_by_time() list~Task~
         +sort_by_priority() list~Task~
-        +filter_tasks() list~Task~
+        +filter_tasks(pet_name, completed) list~Task~
         +mark_task_complete(Task) Task
         +detect_conflicts() list~str~
-        +next_available_slot(int) str
+        +next_available_slot(int, str, str) str
         +todays_schedule() list~Task~
+    }
+    class Persistence {
+        <<module functions>>
+        +save_to_json(Owner, str) None
+        +load_from_json(str) Owner
     }
     Owner "1" --> "*" Pet : has
     Pet "1" --> "*" Task : has
     Scheduler --> Owner : reads
     Task --> Priority : uses
+    Persistence ..> Owner : serializes
