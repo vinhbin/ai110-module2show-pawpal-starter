@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date as _date, timedelta
 from enum import IntEnum
 
 
@@ -29,7 +30,21 @@ class Task:
 
     def next_occurrence(self) -> "Task | None":
         """Return the next recurrence of this task, or None if it does not repeat."""
-        raise NotImplementedError
+        deltas = {"daily": timedelta(days=1), "weekly": timedelta(weeks=1)}
+        step = deltas.get(self.frequency)
+        if step is None:
+            return None
+        current = _date.fromisoformat(self.date)
+        nxt = (current + step).isoformat()
+        return Task(
+            title=self.title,
+            duration_minutes=self.duration_minutes,
+            priority=self.priority,
+            time=self.time,
+            frequency=self.frequency,
+            completed=False,
+            date=nxt,
+        )
 
 
 @dataclass
