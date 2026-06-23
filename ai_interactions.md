@@ -24,8 +24,12 @@ algorithm, and JSON persistence.
 
 **What did you have to verify or fix manually?**
 
-> _TODO (your words): note anything you reviewed, questioned, or changed — e.g. the
-> conflict-detection tradeoff, or whether the sort key was correct._
+I reviewed each step before moving on instead of accepting everything at once. The main thing I caught
+was the priority sort: the first draft sorted priorities as strings, which ordered them alphabetically
+instead of by importance, so I had it switch to an `IntEnum` and sort on the number. I also double-checked
+that completing a daily task actually attached the next occurrence to the same pet (not a copy), and I
+confirmed the `Priority` enum survived being saved to JSON and loaded back. I ran `python -m pytest`
+after each change rather than trusting that the code worked.
 
 ---
 
@@ -33,18 +37,20 @@ algorithm, and JSON persistence.
 
 > Compare two different prompts (or two different models) on the same task.
 
-> _TODO: pick one algorithm (e.g. weekly recurrence) you prompted two models for, and
-> fill the table with what each produced and which you kept._
+I compared two answers to the same task: "when a daily or weekly task is completed, create the next
+occurrence."
 
 | | Option A | Option B |
 |-|----------|----------|
-| **Model / tool used** | | |
-| **Prompt** | | |
-| **Response summary** | | |
-| **What was useful** | | |
-| **Problems noticed** | | |
-| **Decision** | | |
+| **Model / tool used** | Claude | ChatGPT |
+| **Prompt** | "Given a Task with a `frequency` and an ISO `date` string, return the next occurrence (daily = +1 day, weekly = +7 days, once = None)." | Same prompt. |
+| **Response summary** | Used `datetime.date.fromisoformat` + `timedelta`, returned a brand-new `Task` with `completed=False`. | Did the date math by manually splitting the string and adding to the day number. |
+| **What was useful** | Handles month/year rollover correctly because `timedelta` does the arithmetic. | Slightly shorter, no import needed. |
+| **Problems noticed** | A little more code. | Broke on month boundaries — adding 1 to Jan 31 gave "2026-01-32" instead of Feb 1. |
+| **Decision** | **Kept this one.** | Rejected. |
 
 **Which approach did you use in your final implementation and why?**
 
-<!-- Your conclusion -->
+I went with Option A (the `timedelta` version) because correctness mattered more than saving a line or
+two — Option B silently produced invalid dates at the end of a month, and the `timedelta` approach
+handles rollover for free. This is the version in `Task.next_occurrence()`.
